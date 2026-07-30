@@ -1,0 +1,19 @@
+scientific_name,afp_type,region,validation_status,notes
+Dissostichus mawsoni,AFGP,Antarctic,verified,UniProt Q90402 repeat sequence confirmed
+Pagothenia borchgrevinki,AFGP,Antarctic,verified,UniProt P02732 repeat sequence confirmed
+Trematomus bernacchii,AFGP,Antarctic,EXCLUDE,UniProt Q1A176 is Elongation Factor-1a not AFGP - keyword search false positive
+Notothenia coriiceps,AFGP,Antarctic,verified,UniProt P24856 repeat sequence confirmed
+Chaenocephalus aceratus,AFGP,Antarctic,verified,UniProt Q1AMR4 repeat sequence confirmed
+Boreogadus saida,AFGP,Arctic,EXCLUDE,UniProt O13029 too short/no repeat - not confirmed AFGP
+Arctogadus glacialis,AFGP,Arctic,EXCLUDE,UniProt A9JQI2 is Cytochrome c oxidase COX1 not AFGP
+Gadus morhua,Type IV,N Atlantic / Arctic,RELABEL,UniProt Q56TU0 = Type-4 ice-structuring protein not AFGP
+Microgadus tomcod,AFGP,NW Atlantic,EXCLUDE,UniProt A0A481T041 is COX1 not AFGP
+Pseudopleuronectes americanus,Type I,NW Atlantic,verified,UniProt P04002 Ala-rich alpha-helix confirmed
+Myoxocephalus scorpius,Type I,N Atlantic/Arctic,verified,UniProt P04368 Ala-rich confirmed
+Liopsetta putnami,Type I,NW Atlantic,EXCLUDE,No reviewed UniProt entry found
+Hemitripterus americanus,Type II,NW Atlantic,verified,UniProt P05140 C-type lectin-like confirmed
+Clupea harengus,Type II,N Atlantic,verified,UniProt Q91992 C-type lectin-like confirmed
+Osmerus mordax,Type II,NW Atlantic,verified,UniProt Q01758 C-type lectin-like confirmed
+Zoarces americanus,Type III,NW Atlantic,verified,UniProt P07457 globular confirmed
+Anarhichas lupus,Type III,N Atlantic,verified,UniProt P12416 globular confirmed
+Lycodichthys dearborni,Type III,Antarctic,verified,UniProt P35751 globular confirmed
