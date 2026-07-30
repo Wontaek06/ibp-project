@@ -91,9 +91,27 @@ data/seed_species.csv (18종, afp_type + validation_status)
 실제로 이미 오류가 하나 발견됨: **Gadus morhua 를 AFGP 로 적었으나 UniProt 검증 결과
 Type IV(ice-structuring protein)** 였음 → `RELABEL` 처리.
 
-→ **제출 전 `verified` 종들의 타입 라벨을 문헌으로 한 번 더 교차확인할 것.**
-서열 패턴상 정황 증거는 확보됨(Ala-rich=Type I, C-type lectin 모티프=Type II,
-구형 소형=Type III, Thr-Ala-Ala 반복=AFGP)이나 이는 확인이지 출처가 아님.
+### ✅ 라벨 검증 완료 (2026-07)
+13종 전부 UniProt 등재명과 교차확인 완료. 전부 일치함.
+- UniProt은 "antifreeze protein" 대신 **"ice-structuring protein(ISP)"** 명명을 쓰는 경우가 많음 (동의어)
+- 이름에 `glyco` 포함 → AFGP / `Type-N` 명시 → 해당 타입 / 번호 없으면 서열로 판정
+  (Ala 40%↑=Type I, 130aa↑&Cys 다수=Type II, 100aa↓=Type III)
+- Gadus morhua 는 UniProt 이 "Type-4 ice-structuring protein" 으로 명시 → Type IV 재분류 확정
+
+### ⚠️ 검증 중 발견된 추가 한계: 성숙 펩타이드 vs 전구체 혼재
+AFGP 그룹의 서열 길이가 종마다 크게 다름:
+Chaenocephalus 17aa / Pagothenia 31aa / Dissostichus 33aa / **Notothenia 790aa**
+
+이는 오류가 아니라 AFGP 생물학 때문임 — AFGP 는 큰 **폴리단백질 전구체**로 합성된 뒤
+절단되어 다수의 짧은 AFGP 분자가 됨. UniProt 등록이 종에 따라 성숙 펩타이드 또는
+전구체 전체로 되어 있음.
+
+영향: 길이 의존적 지표(**pI, instability index**)는 서로 다른 대상을 비교하게 됨.
+조성 비율 지표(**ala_pct, thr_pct**)는 상대적으로 견고함(790aa 에서도 Ala 49.7%).
+또한 Chaenocephalus(17aa)는 ProtParam 통계 자체가 노이즈에 가까움.
+
+→ 보고서 한계에 명시할 것. 개선하려면 UniProt `features` 의 CHAIN/PEPTIDE 위치로
+   전구체에서 성숙 영역만 잘라내 재계산 (팀원 개선 항목 후보).
 
 ## 팀원 인수인계 — 발전시킬 만한 지점
 
