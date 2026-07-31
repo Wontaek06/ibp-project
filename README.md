@@ -128,17 +128,68 @@ AFP 없음)을 `data/spike_seed.csv` 에 고정하고 전 단계를 한 번 관�
 핀란드 북방림 등 전 세계 분포라, 북극 균주 AY30 의 실제 채집 환경과 다름.
 (인수인계 5번에 적힌 우려가 실측으로 확인된 셈)
 
-## 2단계 — DUF3494 확장 경로 (검증 완료)
+## 2단계 — DUF3494 확장 (실행 완료)
 
-`python -m src.fetch_pfam` → `data/pfam11999_proteins.tsv` / `.fasta`
+```bash
+python -m src.fetch_pfam                                    # 2,250건 다운로드
+cd-hit -i data/pfam11999_proteins.fasta \
+       -o data/pfam11999_nr90.fasta -c 0.9 -n 5             # 중복 제거
+python -m src.expand_eda                                    # 피처 + EDA
+```
 
-- **Pfam PF11999 (DUF3494, "Ice-binding-like")**: UniProtKB 2,250건, InterPro 기준
-  2,322건, AlphaFold 모델 1,582개 존재.
+- **Pfam PF11999 (DUF3494, "Ice-binding-like")**: UniProtKB 2,250건 / 1,223 분류군,
+  InterPro 기준 2,322건, AlphaFold 모델 1,582개.
 - UniProt 검색 필드는 **`xref:pfam-PF11999`** 임. `xref_pfam:PF11999` 은
   "not a valid search field" 로 거부되고, `database:pfam` 은 Pfam 상호참조가 있는
   전체 엔트리(~1.1억)를 반환하므로 쓰면 안 됨.
 - InterPro API 의 `?format=fasta` 는 404 — 서열은 UniProt `/stream` 으로 받을 것.
-- CD-HIT 는 미설치 상태: `brew install cd-hit` 또는 `conda install -c bioconda cd-hit`
+- **Swiss-Prot 는 2,250건 중 9건뿐임.** `reviewed:true` 로 거르면 이 계열이
+  사실상 사라짐(1단계 2번 항목과 같은 이유).
+
+### CD-HIT 90% → 1,835 대표 서열
+
+| clade | n | 비율 |
+|---|---|---|
+| Bacteria | 1,284 | 70.0% |
+| Fungi | 412 | 22.5% |
+| Other/미분류 | 47 | 2.6% |
+| Diatoms | 46 | 2.5% |
+| Metazoa | 17 | 0.9% |
+| Archaea | 15 | 0.8% |
+| Plants | 14 | 0.8% |
+
+전 피처가 clade 간 유의차를 보임(Kruskal-Wallis, 전부 p < 1e-5):
+`length` H=490 (p=9e-104), `gravy` H=366, `thr_pct` H=87, `pI` H=76, `instability` H=74,
+`ala_pct` H=33. → `figures/duf3494_features_by_clade.png`
+
+### ⚠️ CD-HIT 대표 선택 주의
+
+**CD-HIT 는 가장 긴 서열을 클러스터 대표로 고르며 큐레이션 상태를 모름.** 그 결과
+문헌 참조 단백질이 익명 TrEMBL 엔트리로 조용히 대체됨 — **ColAFP(A5XB26, Swiss-Prot)가
+`A0A5C6QDJ8` 에게 Cluster 1530 을 뺏겼음.** `expand_eda.py` 는 `.clstr` 을 읽어
+**Swiss-Prot + 스파이크 시드가 자기 클러스터를 이기도록** 대표를 재선택함.
+
+### ⚠️ `length` 해석 주의
+
+이건 **도메인 길이가 아니라 단백질 전체 길이**임. DUF3494 도메인은 ~230 aa 이고,
+규조류/균류/후생동물 엔트리(229~258 aa)가 대략 그 값 — 즉 도메인 + 신호펩타이드임.
+세균(441) · 고세균(861) 중앙값은 **도메인 융합 구조**이지 더 큰 ice-binding 도메인이
+아님(MpAFP 의 RTX 반복이 대표적 예). 따라서 length 결과는 clade 별 **단백질 구조**에
+대한 진술이며, ice-binding 모듈 자체를 기술하는 변수처럼 모델에 넣으면 안 됨.
+
+### 스파이크 시드와의 연결
+
+1,835 대표 중 스파이크 시드 **6개**가 존재(A5XB26, C7F6X3, D0FHA3, D2DLE1, H7FWB6, Q76CE8).
+이는 시드 CSV 의 `afp_class == DUF3494` 6종과 정확히 일치함 — 나머지 7개(어류 AFP
+Type I/II/III·AFGP 6종 + RTX 계열 MpAFP)는 애초에 다른 단백질 계열이므로 PF11999 에
+없는 게 맞음. 시드 큐레이션의 교차검증이 된 셈.
+
+### 아직 안 한 것
+
+1,835 대표의 **환경 매핑은 미실행**. 1,117 분류군 × 대표점 5 × 환경변수 3 ≈ 1.7만 API
+호출이라 별도 배치가 필요함. 게다가 세균이 70% 라 GBIF 좌표의 서식지 대리 타당성이
+어류만큼 좋지 않음(1단계에서 *Leucosporidium* 사례로 확인됨) — 균주 채집 좌표
+(NCBI BioSample) 또는 메타게놈 샘플 환경값 검토가 먼저임.
 
 ## 알아둬야 할 것 (데이터 정제 이력)
 
