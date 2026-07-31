@@ -14,7 +14,7 @@ import time
 import requests
 
 from src.cache import cached
-from src.occurrence import cold_points  # noqa: F401  (re-exported)
+from src.occurrence import cold_points, core_points  # noqa: F401  (re-exported)
 
 GBIF_MATCH = "https://api.gbif.org/v1/species/match"
 GBIF_OCC = "https://api.gbif.org/v1/occurrence/search"
@@ -67,7 +67,14 @@ def gbif_records(species_name, limit=300, request_pause=0.2):
 
 
 
-def species_cold_points(species_name, k=3, occ_limit=300):
-    """Convenience wrapper: species name -> up to k cold/poleward points."""
+def species_core_points(species_name, k=3, occ_limit=300):
+    """
+    Species name -> up to k localities at the centre of its distribution.
+
+    Uses core_points, matching src/spike.py. The two entry points must not
+    disagree about what a "representative locality" is, or the 18-species
+    figures and the spike figures end up plotting different quantities on
+    axes that look the same.
+    """
     recs = gbif_records(species_name, limit=occ_limit)
-    return cold_points(recs, k=k)
+    return core_points(recs, k=k)

@@ -12,7 +12,7 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from src.fetch_gbif import species_cold_points
+from src.fetch_gbif import species_core_points
 from src.fetch_bio_oracle import fetch_all_env_vars
 from src.fetch_uniprot import uniprot_afp
 from src.fetch_alphafold import alphafold_meta, fetch_plddt_profile, structural_regularity
@@ -27,11 +27,11 @@ AFP_TYPES = ["AFGP", "Type I", "Type II", "Type III"]  # Type IV excluded from g
 
 
 def build_environment_table(seed_df):
-    """All 18 seed species: GBIF winter points -> Bio-ORACLE env vars."""
+    """All 18 seed species: distribution-centre localities -> Bio-ORACLE env vars."""
     rows = []
     for _, s in seed_df.iterrows():
         name = s["scientific_name"]
-        points = species_cold_points(name, k=3)
+        points = species_core_points(name, k=3)
         env = fetch_all_env_vars(points) if points else {
             "surf_min_temp": None, "bottom_temp": None, "sea_ice_thick": None
         }
@@ -91,9 +91,12 @@ def make_figures(merged, seq_cols_present):
         if len(sub):
             plt.scatter(sub.rep_lat, sub.surf_min_temp, c=c, label=t, s=70, edgecolor="k")
     plt.axhline(0, ls="--", c="gray", lw=0.8)
-    plt.xlabel("Representative poleward latitude (deg)")
-    plt.ylabel("Surface MIN temp (C, winter)")
-    plt.title("Cold-habitat winter temperature vs latitude")
+    # Labels track the current definitions: the representative point is the
+    # distribution centre (not the poleward extreme), and the temperature is
+    # Bio-ORACLE's annual minimum (not a winter-observation average).
+    plt.xlabel("Distribution-centre latitude (deg)")
+    plt.ylabel("Annual minimum sea surface temperature (C)")
+    plt.title("Habitat temperature vs latitude")
     plt.legend(); plt.tight_layout()
     plt.savefig(f"{FIG_DIR}/env_latitude_vs_sst.png", dpi=150); plt.close()
 

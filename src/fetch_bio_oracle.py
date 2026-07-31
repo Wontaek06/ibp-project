@@ -39,36 +39,61 @@ def search_datasets(keyword):
     return [row[idx] for row in r["table"]["rows"]]
 
 
+def _lon_boxes(lon, radius_deg):
+    """
+    Longitude ranges to query, split at the antimeridian.
+
+    The grid is indexed -180..180, so a naive lon +/- radius runs off the
+    end near the dateline and ERDDAP returns nothing: Dissostichus
+    mawsoni sits in the Ross Sea around -179.6, where lon - 0.5 = -180.1
+    is out of range and every layer came back null. Circumpolar Antarctic
+    taxa are exactly the ones this project cares about, so the range wraps
+    to the far side instead of being clamped.
+    """
+    lo, hi = lon - radius_deg, lon + radius_deg
+    if lo < -180:
+        return [(-180.0, hi), (lo + 360.0, 180.0)]
+    if hi > 180:
+        return [(lo, 180.0), (-180.0, hi - 360.0)]
+    return [(lo, hi)]
+
+
+def _angular_gap(a, b):
+    """Shortest signed distance between two longitudes, in degrees."""
+    return (a - b + 180.0) % 360.0 - 180.0
+
+
 @cached("bio_oracle")
 def bo_point(dataset_id, variable, lat, lon, radius_deg=0.5):
     """Value at (lat, lon); falls back to nearest non-null cell within radius_deg."""
-    lat_lo, lat_hi = lat - radius_deg, lat + radius_deg
-    lon_lo, lon_hi = lon - radius_deg, lon + radius_deg
+    lat_lo = max(-90.0, lat - radius_deg)
+    lat_hi = min(90.0, lat + radius_deg)
 
     for time_part in ("[last]", ""):
-        query = f"{variable}{time_part}[({lat_lo}):({lat_hi})][({lon_lo}):({lon_hi})]"
-        try:
-            r = requests.get(f"{ERDDAP}/griddap/{dataset_id}.json?{query}", timeout=40)
-        except requests.RequestException:
-            continue
-        if not r.ok:
-            continue
-        try:
-            rows = r.json()["table"]["rows"]
-        except Exception:
-            continue
-        if not rows:
-            continue
-
         best_val, best_dist = None, None
-        for row in rows:
-            val = row[-1]
-            if val is None:
+
+        for lon_lo, lon_hi in _lon_boxes(lon, radius_deg):
+            query = f"{variable}{time_part}[({lat_lo}):({lat_hi})][({lon_lo}):({lon_hi})]"
+            try:
+                r = requests.get(f"{ERDDAP}/griddap/{dataset_id}.json?{query}", timeout=40)
+            except requests.RequestException:
                 continue
-            row_lat, row_lon = row[-3], row[-2]
-            d = math.hypot(row_lat - lat, row_lon - lon)
-            if best_dist is None or d < best_dist:
-                best_dist, best_val = d, val
+            if not r.ok:
+                continue
+            try:
+                rows = r.json()["table"]["rows"]
+            except Exception:
+                continue
+
+            for row in rows:
+                val = row[-1]
+                if val is None:
+                    continue
+                row_lat, row_lon = row[-3], row[-2]
+                d = math.hypot(row_lat - lat, _angular_gap(row_lon, lon))
+                if best_dist is None or d < best_dist:
+                    best_dist, best_val = d, val
+
         if best_val is not None:
             return round(float(best_val), 3)
 
