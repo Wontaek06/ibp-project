@@ -44,7 +44,8 @@ clear_cache("bio_oracle")  # 특정 API만 삭제
 ```
 data/seed_species.csv (18종, afp_type + validation_status)
         │
-        ├─ src/fetch_gbif.py        → 종별 겨울철/극쪽 관측좌표
+        ├─ src/fetch_gbif.py        → 종명 → GBIF 관측좌표
+        ├─ src/occurrence.py        → 좌표 → 분포중심 대표점 (core_points)
         ├─ src/fetch_bio_oracle.py  → 좌표 → 표층최저·저층수온·해빙두께
         ├─ src/fetch_uniprot.py     → 종 → 검증된 AFP 서열 (reviewed:true만)
         ├─ src/fetch_alphafold.py   → accession → 구조 신뢰도 + pLDDT 프로파일
@@ -55,10 +56,96 @@ data/seed_species.csv (18종, afp_type + validation_status)
         data/final_merged.csv, figures/*.png
 ```
 
+## 1단계 스파이크 — 미생물·조류 IBP 포함 전 구간 관통 (2026-07)
+
+`python -m src.spike` → `data/spike_results.csv`
+
+기존 파이프라인은 **어류 AFP 전용**이었음. 본선의 DUF3494(미생물·균류·규조류) 확장이
+가능한지 보려고, 문헌상 특성이 규명된 IBP 13개 + **음성 대조군 3종**(열대·온대 어류,
+AFP 없음)을 `data/spike_seed.csv` 에 고정하고 전 단계를 한 번 관통시킴.
+
+시드는 키워드 검색이 아니라 **UniProt accession 을 직접 지정**함 — 키워드 검색이
+`seed_species.csv` 의 EXCLUDE 5종을 만든 원인이기 때문.
+
+### 단계별 결과 (16개 시드)
+
+| 단계 | 통과 | 비고 |
+|---|---|---|
+| UniProt 서열 | 13/13 | ColAFP, FfIBP, MpAFP, LeIBP, TisAFP, FcIBP1, CnAFP + 어류 6 |
+| 출처 생물명 | 16/16 | |
+| GBIF 분류 매칭 | 16/16 | 전부 EXACT |
+| 출현 좌표 | 16/16 | 전부 GBIF, OBIS 폴백 불필요 |
+| Bio-ORACLE 수온 | **14/16** | 결손 2건 모두 **육상 균류** (아래 참조) |
+| AlphaFold 구조 | 13/13 | pLDDT 75.1~95.4, 전부 모델 존재 |
+
+### 한랭 적응 검증
+
+| 그룹 | n | 표층 연중최저수온(중앙값) | 분포중심 위도 |
+|---|---|---|---|
+| IBP 보유 | 11 | **-0.25 °C** (범위 -1.99 ~ 4.41) | 63.5° |
+| 음성 대조군 | 3 | **14.04 °C** (범위 12.38 ~ 23.20) | 28.0° |
+
+**분리 14.30 °C, Mann-Whitney U=0.0, p=0.0027 (완전 분리)** — "추운 생물이 실제로
+저수온 좌표에 매핑되는가"에 대한 답은 예. 프로젝트 전제가 성립함.
+
+### 스파이크가 잡아낸 결함 (기존 코드 포함)
+
+1. **`protein_name:antifreeze` 쿼리로는 미생물 IBP 가 전멸함.** UniProt 등재명이
+   "Ice-binding protein" 이라 한 건도 안 잡힘. 미생물까지 보려면 `protein_name:"ice-binding"`
+   을 OR 로 넣어야 함.
+2. **`reviewed:true` 필터는 남극 규조류를 통째로 날림.** *Fragilariopsis cylindrus*
+   IBP1~6(D0FHA3~A8), *Chaetoceros neogracilis*(D2DLE1)는 전부 TrEMBL 임.
+   어류만 볼 땐 안전한 필터였지만 확장 시엔 못 씀.
+3. **GBIF `species/match` 에 이름만 넘기면 세균 속이 `matchType: NONE` 이 됨.**
+   ("Colwellia" → Multiple equal matches) UniProt lineage 에서 kingdom 을 뽑아
+   힌트로 주면 해결됨 → `src/taxonomy.py`.
+4. **⚠️ 겨울 관측월 필터가 극지 taxa 를 저위도로 끌어내리고 있었음** (기존
+   `fetch_gbif.cold_points`). 극지 현장조사는 여름에 집중되기 때문 —
+   Colwellia 는 관측 300건 중 231건이 3월이고 12~2월은 7건뿐인데, 그 7건이
+   56.6°N·41.3°S 라 실제 중앙값 78.7°N 인 taxon 이 3.5 °C 로 찍혔음.
+   Leucosporidium 은 남위 42도·11.6 °C 로 찍혔음. **필터 제거함** — 계절 극값은
+   Bio-ORACLE `thetao_min`(연중 최저)이 이미 담당하므로 이중 계산이었고,
+   샘플링 노력 편향만 들여왔음.
+5. **대표점을 "가장 극쪽 k개"로 잡으면 안 됨.** 분포 꼬리는 미아(vagrant) 기록과
+   샘플링 편향이 지배함 — 황다랑어(분포중심 7.7°N)가 2.7 °C, 홍돔이 1.98 °C 로
+   나왔음. **분포 중심(`core_points`)으로 전환**함. 꼬리는 `tail_lat` 컬럼에
+   위도만 보존(서식 한계 질문용).
+6. **좌표 중복 제거 필요.** 한 정점 반복 조사가 대표점 5개 중 4개를 차지하는 일이
+   있었음. 단, **중복 제거는 대표점 선택에만 적용하고 분포중심 계산에는 적용하면 안 됨**
+   — 관측 밀도가 사라져 Colwellia 중심이 78.7°N→56.6°N 으로 밀림.
+
+→ 4·5·6 은 `fetch_gbif.py` 에도 있던 문제라 **기존 18종 결과도 같은 편향을 받음.
+   `python -m src.pipeline` 재실행 필요.**
+
+### 확인된 한계: 육상 IBP 는 해양 레이어로 못 잡음
+
+`LeIBP`(*Leucosporidium* sp. AY30, 북극 효모)와 `TisAFP`(*Typhula ishikariensis*,
+눈곰팡이)는 좌표는 정상적으로 나오지만(61.1°N / 47.8°N) **Bio-ORACLE 수온이 null** 임.
+육상 종이라 해양 격자에 없음. 버그가 아니라 데이터 도메인 불일치.
+→ 육상 taxa 는 WorldClim/CHELSA 기온을 붙이거나, 해양 taxa 로 범위를 한정해야 함.
+
+또한 **균주 수준 서식지는 속 단위 GBIF 좌표로 대리할 수 없음** — *Leucosporidium* 속은
+핀란드 북방림 등 전 세계 분포라, 북극 균주 AY30 의 실제 채집 환경과 다름.
+(인수인계 5번에 적힌 우려가 실측으로 확인된 셈)
+
+## 2단계 — DUF3494 확장 경로 (검증 완료)
+
+`python -m src.fetch_pfam` → `data/pfam11999_proteins.tsv` / `.fasta`
+
+- **Pfam PF11999 (DUF3494, "Ice-binding-like")**: UniProtKB 2,250건, InterPro 기준
+  2,322건, AlphaFold 모델 1,582개 존재.
+- UniProt 검색 필드는 **`xref:pfam-PF11999`** 임. `xref_pfam:PF11999` 은
+  "not a valid search field" 로 거부되고, `database:pfam` 은 Pfam 상호참조가 있는
+  전체 엔트리(~1.1억)를 반환하므로 쓰면 안 됨.
+- InterPro API 의 `?format=fasta` 는 404 — 서열은 UniProt `/stream` 으로 받을 것.
+- CD-HIT 는 미설치 상태: `brew install cd-hit` 또는 `conda install -c bioconda cd-hit`
+
 ## 알아둬야 할 것 (데이터 정제 이력)
 
-1. **환경 변수는 연평균이 아니라 "겨울철/극쪽 관측점 평균"** 을 씀. 연평균은
-   온대종의 겨울 저온 노출을 가려서 AFP 유도 조건을 못 잡음.
+1. **환경 변수는 연평균이 아니라 "분포중심 관측점의 연중 최저수온"** 을 씀
+   (`thetao_min`). 연평균은 온대종의 겨울 저온 노출을 가려서 AFP 유도 조건을 못 잡음.
+   계절 극값은 이 레이어가 담당하므로 **관측월로 좌표를 거르지 말 것** —
+   그렇게 하면 극지 taxa 가 오히려 저위도로 끌려감(1단계 스파이크 4번 항목).
 2. **Bio-ORACLE 좌표 요청은 반경 탐색 포함**: 정확한 좌표가 육지/마스킹 격자에
    걸리면 모든 레이어가 동시에 null이 됨(확인된 사례: Pagothenia borchgrevinki,
    Gadus morhua, Hemitripterus americanus, Osmerus mordax). 주변 0.5도 박스에서
@@ -66,6 +153,10 @@ data/seed_species.csv (18종, afp_type + validation_status)
 3. **UniProt 검색은 `protein_name:antifreeze AND reviewed:true`로 한정**.
    느슨한 전체텍스트 검색은 무관한 단백질(Elongation Factor-1a, Cytochrome c
    oxidase I 등)을 "antifreeze"라는 단어가 우연히 포함된 이유로 잘못 매칭함.
+   **단, 이 쿼리는 어류 전용임** — 미생물 IBP 는 등재명이 "Ice-binding protein"
+   이라 안 잡히고, 규조류 IBP 는 TrEMBL 이라 `reviewed:true` 에서 탈락함.
+   확장 시에는 accession 고정(`uniprot_by_accession`) 또는 Pfam 도메인 기반
+   수집(`src/fetch_pfam.py`)을 쓸 것.
 4. **`data/seed_species.csv`의 `validation_status` 컬럼이 최종 판정**:
    - `verified`: 서열이 해당 AFP 타입의 알려진 특징과 일치함을 확인
    - `RELABEL`: Gadus morhua는 AFGP가 아니라 Type IV(ice-structuring protein)로 확인, 재분류
