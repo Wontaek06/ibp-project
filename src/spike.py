@@ -22,6 +22,7 @@ from src.fetch_uniprot import uniprot_by_accession
 from src.taxonomy import resolve_taxon
 from src.occurrence import fetch_occurrences, core_points, cold_points
 from src.fetch_bio_oracle import bo_species, CONFIG
+from src.fetch_land_climate import land_min_temp
 from src.fetch_alphafold import alphafold_meta
 
 SEED_PATH = "data/spike_seed.csv"
@@ -97,11 +98,22 @@ def run_one(row):
     if tail:
         rec["tail_lat"] = round(max(abs(p["lat"]) for p in tail), 2)
 
-    # --- Stage 5: environment (Bio-ORACLE) --------------------------------
+    # --- Stage 5: environment --------------------------------------------
+    # Marine layers first; an all-null result means a land taxon, which
+    # gets air temperature instead. The two are kept in separate columns
+    # because sea water is bounded near -2 C by freezing point while winter
+    # land air is not - see src/fetch_land_climate.py.
     if pts:
         for label, (dsid, var) in CONFIG.items():
             rec[label] = bo_species(dsid, var, pts)
         ok["environment"] = rec.get("surf_min_temp") is not None
+
+        if not ok["environment"]:
+            rec["land_min_temp"] = land_min_temp(pts)
+            rec["habitat"] = "terrestrial"
+            ok["environment"] = rec["land_min_temp"] is not None
+        else:
+            rec["habitat"] = "marine"
 
     # --- Stage 6: AlphaFold ----------------------------------------------
     if rec["accession"]:
@@ -111,9 +123,11 @@ def run_one(row):
     else:
         ok["alphafold"] = None  # not applicable
 
+    temp = (f"sst_min={rec['surf_min_temp']}" if rec.get("surf_min_temp") is not None
+            else f"AIR_min={rec.get('land_min_temp')}")
     print(f"  {rec['label']:16s} {str(rec.get('organism'))[:28]:30s} "
           f"gbif={rec.get('gbif_key')} occ={rec.get('n_occ')}({rec.get('occ_provider')}) "
-          f"lat={rec.get('rep_lat')} sst_min={rec.get('surf_min_temp')} af={rec.get('af')}")
+          f"lat={rec.get('rep_lat')} {temp} af={rec.get('af')}")
 
     for stage in STAGES:
         rec[f"ok_{stage}"] = ok[stage]
@@ -153,6 +167,12 @@ def cold_contrast(df):
               f"range=[{group.surf_min_temp.min():.2f}, {group.surf_min_temp.max():.2f}]")
         print(f"  |lat| centre   median={group.rep_lat.median():6.2f} deg  "
               f"(poleward tail median {group.tail_lat.median():.2f} deg)")
+
+    if "land_min_temp" in df and df.land_min_temp.notna().any():
+        land = df[df.land_min_temp.notna()]
+        print(f"\nterrestrial taxa (air temperature, NOT comparable to the above): n={len(land)}")
+        for _, r in land.iterrows():
+            print(f"  {r.label:14s} {r.rep_lat:6.2f} deg   winter min air {r.land_min_temp:7.2f} C")
 
     cold = have_env[have_env.expect_cold == "yes"].surf_min_temp
     warm = have_env[have_env.expect_cold == "no"].surf_min_temp
