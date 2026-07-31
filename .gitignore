@@ -1,0 +1,22 @@
+# API response cache - regenerated on demand, hundreds of small files
+.cache/
+
+# Generated outputs
+figures/
+data/final_merged.csv
+data/stats_summary.csv
+data/pfam11999_proteins.tsv
+data/pfam11999_proteins.fasta
+
+# data/spike_results.csv is intentionally NOT ignored - it is small and is
+# the evidence for the stage-1 feasibility claims in the README.
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.remember/
