@@ -1,0 +1,4 @@
+﻿n,n_clades,features,loo_accuracy,clade_holdout_accuracy,majority_baseline,phylogeny_gap,clades_with_unique_label,feature_set
+18,10,"['surf_min_temp', 'bottom_temp', 'sea_ice_thick']",0.222,0.056,0.444,0.167,[],environment only
+10,8,"['ala_pct', 'thr_pct', 'gravy', 'pI', 'instability']",0.6,0.3,0.3,0.3,"['Gadidae', 'Nototheniidae']",sequence only
+10,8,"['surf_min_temp', 'bottom_temp', 'sea_ice_thick', 'ala_pct', 'thr_pct', 'gravy', 'pI', 'instability']",0.3,0.2,0.3,0.1,"['Gadidae', 'Nototheniidae']",environment + sequence

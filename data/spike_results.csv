@@ -14,4 +14,4 @@ TypeIII-Za,Animalia,Type III,yes,P07457,Ice-structuring protein SP1-C,Zoarces am
 TypeIII-Al,Animalia,Type III,yes,P12416,Type-3 ice-structuring protein 1.9,Anarhichas lupus,8204.0,88.0,True,Anarhichas lupus,SPECIES,8006460,EXACT,Animalia,300,GBIF,5,71.09,81.1,4.412,6.333,0.0,True,88.94,True,True,True,True,True,True,,marine
 CTRL-yellowfin,Animalia,none,no,,,Thunnus albacares,,,,Thunnus albacares,SPECIES,2374013,EXACT,Animalia,300,GBIF,5,18.96,40.32,23.204,8.101,0.0,,,,True,True,True,True,,,marine
 CTRL-seabream,Animalia,none,no,,,Sparus aurata,,,,Sparus aurata,SPECIES,2392508,EXACT,Animalia,300,GBIF,5,42.58,50.12,12.375,14.334,0.0,,,,True,True,True,True,,,marine
-CTRL-snapper,Animalia,none,no,,,Lutjanus campechanus,,,,Lutja
+CTRL-snapper,Animalia,none,no,,,Lutjanus campechanus,,,,Lutjanus campechanus,SPECIES,2384865,EXACT,Animalia,300,GBIF,5,27.95,44.43,14.043,23.065,0.0,,,,True,True,True,True,,,marine

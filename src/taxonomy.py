@@ -92,6 +92,23 @@ def gbif_match(name, kingdom=None, rank=None):
         return {}
 
 
+def resolve_clade(name, kingdom=None, rank="family"):
+    """
+    Species name -> its GBIF clade at `rank` (family by default).
+
+    Used as the grouping variable for phylogeny-controlled cross-validation:
+    holding out one family at a time is what separates "the model learned
+    habitat" from "the model recognised the lineage". Falls back to order,
+    then to the genus, so a species always lands in some group rather than
+    being dropped from the analysis.
+    """
+    query, _ = clean_organism(name)
+    if not query:
+        return None
+    m = gbif_match(query, kingdom=kingdom)
+    return m.get(rank) or m.get("order") or m.get("genus") or query.split()[0]
+
+
 def resolve_taxon(organism, lineage=None):
     """
     UniProt organism (+ lineage) -> {name, rank, usageKey, matchType, kingdom}.

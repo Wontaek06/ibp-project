@@ -13,7 +13,7 @@ AFP-type group), so:
 import numpy as np
 from scipy.stats import kruskal
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import LeaveOneOut, cross_val_predict
+from sklearn.model_selection import LeaveOneOut, LeaveOneGroupOut, cross_val_predict
 from sklearn.metrics import accuracy_score
 
 
@@ -80,3 +80,68 @@ def classify_afp_type(df, feature_cols, target_col="afp_type"):
     importances = dict(zip(feature_cols, np.round(clf.feature_importances_, 3)))
 
     return round(float(acc), 3), importances
+
+
+def majority_baseline(y):
+    """Accuracy of always predicting the most common class."""
+    values, counts = np.unique(np.asarray(y), return_counts=True)
+    return float(counts.max() / counts.sum())
+
+
+def phylogeny_controlled_cv(df, feature_cols, target_col="afp_type",
+                            group_col="family", min_rows=6):
+    """
+    Compare Leave-One-Out CV against leave-one-CLADE-out CV.
+
+    Why this matters more than the LOO number on its own: AFP type is
+    heavily confounded with taxonomy in this dataset. Every AFGP species
+    is a notothenioid or a gadid; Type III is Zoarcidae plus
+    Anarhichadidae. Under Leave-One-Out, a held-out species almost always
+    has a close relative left in the training set carrying the same label,
+    so the model can score well by recognising the lineage and never learn
+    anything about habitat.
+
+    Holding out an entire family removes that shortcut - the model must
+    generalise to a clade it has never seen. The gap between the two
+    accuracies is the part of LOO performance that was phylogenetic
+    memorisation rather than environmental signal.
+
+    Both numbers are also compared against a majority-class baseline,
+    because with small imbalanced groups a plausible-looking accuracy can
+    be worse than always guessing the commonest label.
+
+    Returns a dict, or None when there are too few complete rows or fewer
+    than two clades to hold out.
+    """
+    d = df.dropna(subset=feature_cols + [target_col, group_col])
+    if len(d) < min_rows or d[group_col].nunique() < 2:
+        return None
+
+    X = d[feature_cols].values
+    y = d[target_col].values
+    groups = d[group_col].values
+
+    clf = RandomForestClassifier(n_estimators=300, random_state=42)
+
+    loo_pred = cross_val_predict(clf, X, y, cv=LeaveOneOut())
+    loo_acc = accuracy_score(y, loo_pred)
+
+    # A clade whose label never appears elsewhere is unpredictable by
+    # construction; it is kept in the score because excluding it would
+    # flatter the result, but it is reported so the reader knows.
+    unseen = [g for g in np.unique(groups)
+              if not set(y[groups == g]) & set(y[groups != g])]
+
+    clade_pred = cross_val_predict(clf, X, y, cv=LeaveOneGroupOut(), groups=groups)
+    clade_acc = accuracy_score(y, clade_pred)
+
+    return {
+        "n": len(d),
+        "n_clades": int(d[group_col].nunique()),
+        "features": list(feature_cols),
+        "loo_accuracy": round(float(loo_acc), 3),
+        "clade_holdout_accuracy": round(float(clade_acc), 3),
+        "majority_baseline": round(majority_baseline(y), 3),
+        "phylogeny_gap": round(float(loo_acc - clade_acc), 3),
+        "clades_with_unique_label": unseen,
+    }

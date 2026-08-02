@@ -52,6 +52,13 @@ FIGURES = [
     ("model_feature_importance.png",
      "어류 AFP 18종 — RandomForest 변수 중요도 (LOO-CV)",
      "표본이 작아 정확도 자체는 참고치이며, 변수 중요도 확인 목적."),
+    ("model_phylogeny_control.png",
+     "어류 AFP 18종 — 환경 신호 vs 계통 암기 (계통 통제 교차검증)",
+     "파랑은 Leave-One-Out, 주황은 과(family) 단위 holdout, 점선은 다수클래스 "
+     "baseline. AFP 타입은 계통과 강하게 교란돼 있어(노토테니아과 4종 전부 AFGP 등) "
+     "LOO 는 근연종을 알아보는 것만으로 점수를 얻음. 과를 통째로 빼면 그 지름길이 "
+     "사라지며, **어떤 변수 조합도 baseline 을 넘지 못함**. 즉 이 데이터로는 "
+     "'환경이 AFP 타입을 결정한다'고 주장할 수 없음."),
     ("duf3494_features_by_clade.png",
      "2단계 DUF3494 — 계통별 서열 특성 (CD-HIT 90% 대표 1,835개)",
      "전 변수가 계통 간 유의차를 보임(전부 p<1e-5). 단 length 는 도메인 길이가 "
@@ -183,6 +190,31 @@ def section_env(out):
                    f"근접 셀 탐색을 쓰면 토양 세균이 해양으로 오분류됨(README 참조).\n")
 
 
+def section_phylogeny(out):
+    path = "data/phylogeny_cv.csv"
+    if not os.path.exists(path):
+        return
+    df = pd.read_csv(path)
+    out.append("## 표 6. 계통 통제 교차검증 — 환경 신호 vs 계통 암기\n")
+    ren = {"feature_set": "변수 집합", "n": "n", "n_clades": "과(family) 수",
+           "loo_accuracy": "LOO 정확도", "clade_holdout_accuracy": "과 holdout 정확도",
+           "majority_baseline": "다수클래스 baseline", "phylogeny_gap": "계통 갭"}
+    t = df[[c for c in ren if c in df]].rename(columns=ren)
+    out.append(md_table(t, floatfmt="{:.3f}") + "\n")
+    out.append(
+        "AFP 타입은 계통과 강하게 교란돼 있음 — Nototheniidae 4종이 전부 AFGP, "
+        "Pleuronectidae 2종이 전부 Type I 인 식. Leave-One-Out 은 제외된 종의 "
+        "근연종이 학습셋에 남아 있어, 서식지를 배우지 않고 **계통을 알아보는 것만으로** "
+        "점수를 얻을 수 있음. 과를 통째로 빼면 그 지름길이 사라짐.\n\n"
+        "**결과: 계통을 통제하면 어떤 변수 집합도 다수클래스 baseline 을 넘지 못함.** "
+        "환경 변수만 쓰면 baseline(0.444)에 한참 못 미치고(0.056), 서열만 쓰면 "
+        "LOO 0.600 이 과 holdout 에서 0.300 으로 떨어져 baseline 과 같아짐.\n\n"
+        "→ 이 데이터로 **\"환경이 AFP 타입을 결정한다\"고 주장할 수 없음**. "
+        "AFP 타입은 계통적 산물로 보는 것이 타당함. 프로젝트의 유효한 주장은 "
+        "타입 예측이 아니라 **\"IBP 보유 여부가 한랭 서식지와 연관된다\"**이며, "
+        "그쪽은 1단계 스파이크에서 p=0.0027 로 뒷받침됨(표 2).\n")
+
+
 def section_pipeline(out):
     path = "data/stats_summary.csv"
     if not os.path.exists(path):
@@ -208,6 +240,7 @@ def main():
     section_duf3494(out)
     section_env(out)
     section_pipeline(out)
+    section_phylogeny(out)
 
     with open(OUT, "w", encoding="utf-8") as fh:
         fh.write("\n".join(out))
