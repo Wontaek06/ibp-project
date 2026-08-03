@@ -1,5 +1,67 @@
 # IBP 프로젝트 — 위도·수온 구배와 항결빙단백질(AFP)
 
+## ⚠️ 정오표 (Errata) — 제출 보고서 대비 (2026-08-03)
+
+**보고서 초안은 좌표 선택 버그 수정 이전 코드로 작성되었음.** 아래 항목은 현재 저장소
+코드로 재실행한 결과와 보고서 서술이 어긋나는 지점이며, 저장소 쪽이 최신·정정본임.
+
+### E1. 어류 18종 환경 변수 수치 변경 (영향 큼)
+
+좌표 선택 버그 4건(§"스파이크가 잡아낸 결함", §"날짜변경선 버그")을 고친 결과
+**환경 변수 15~17 / 18종의 값이 바뀜**. 위도·표층최저수온·저층수온·해빙두께가 모두 해당되며,
+그 위에 얹힌 Kruskal-Wallis·Dunn·부트스트랩 CI·RandomForest 결과도 함께 바뀜.
+
+**서열·구조 지표(`ala_pct`, `thr_pct`, `gravy`, `pI`, `instability`, `plddt`)는 0 / 18 로 불변** —
+좌표와 무관한 값이므로 당연하며, 수정이 의도한 범위만 건드렸다는 확인이기도 함.
+
+→ 보고서에 옮긴 환경 관련 수치·그림은 `data/final_merged.csv`, `data/stats_summary.csv`,
+`figures/env_*.png` 기준으로 갱신 필요.
+
+### E2. "환경이 AFP 타입을 결정한다" 취지의 서술은 철회 대상
+
+계통 통제 교차검증(§"계통 통제 교차검증") 결과, **과(family) 단위 holdout 에서는 어떤 변수
+조합도 다수클래스 baseline 을 넘지 못함**. 환경 변수만 쓰면 plain LOO 에서조차 baseline
+(0.444)에 못 미침(0.222).
+
+이 데이터가 뒷받침하는 주장은 **AFP 타입 예측이 아니라 "IBP 보유 여부가 한랭 서식지와
+연관된다"**이며, 후자는 1단계 스파이크에서 p=0.0027 로 강하게 지지됨.
+
+### E3. PAMC 교차검증 산출 수치 불일치
+
+`python -m src.kpdc_crosscheck` 실행 결과가 보고서 §4.5·4.6 서술과 부분적으로만 일치함.
+
+| 항목 | 보고서 | 저장소 재실행 | 판정 |
+|---|---|---|---|
+| 대조표 | 576행 | **574행** | 거의 일치 |
+| 좌표 | 479행 | **449행** | 차이 30 |
+| 채집지점 | 95행 | **38행** | 재현 안 됨 |
+| 속별 위도 | 45행 | **38행** | 차이 7 |
+
+- **좌표 차이**: PAMC 원본에 좌표가 비어 있는 균주가 125건 있음(King George Island 37,
+  Ross Sea 29, Mountain Rwenzori 43 등). 추정 좌표로 채우지 않았음.
+- **채집지점 95는 어떤 정의로도 재현되지 않음**: locality 문자열 38 / 좌표쌍 30 /
+  locality+habitat 59 / sampling_site 29.
+
+### E4. 보고서 §4.6 해양 지점 수 — 내부 불일치 + 재현 실패
+
+보고서 본문 "47곳" 과 같은 문단의 "북극해 59 + 남극해 30(=89)" 이 서로 어긋남.
+저장소 재실행 값은 아래와 같으며 **양쪽 모두와 일치하지 않음**.
+
+| 기준 | 값 |
+|---|---|
+| 해양 **지점** 수 | 17 (남극 9 · 북극 7 · 기타 1) |
+| 해양 **균주** 수 | 196 (북극 149 · 남극 23 · 기타 24) |
+
+→ 정확한 값은 `data/pamc_sites.csv`, `data/pamc_coordinates.csv` 기준으로 인용할 것.
+
+### 정오표 관련 참고
+
+E3·E4 는 원본 분석 스크립트가 저장소에 없어 정의 차이를 대조할 수 없는 상태임.
+현재 `src/kpdc_crosscheck.py` 는 **보고서 수치에 맞추지 않고 실제 실행 결과를 그대로**
+산출하도록 작성되어 있음 — 교차검증의 목적상 목표값을 미리 알고 맞추면 검증이 무의미해지기 때문.
+
+---
+
 ## 실행 환경
 - Python 3.10+
 - `pip install -r requirements.txt`
@@ -18,12 +80,33 @@ main()
 
 **로컬/터미널 실행 시**:
 ```bash
-cd ibp_project
 pip install -r requirements.txt
+
+# 1단계 — 스파이크 (IBP 13종 + 음성 대조군 3종, 전 구간 관통)
+python -m src.spike
+python -m src.figures_spike
+
+# 어류 AFP 18종 패널 + 계통 통제 교차검증
 python -m src.pipeline
+
+# 2단계 — DUF3494(PF11999) 계열 확장
+python -m src.fetch_pfam
+cd-hit -i data/pfam11999_proteins.fasta -o data/pfam11999_nr90.fasta -c 0.9 -n 5
+python -m src.expand_eda
+python -m src.expand_env          # 속 단위 서식지 온도 (장시간, 재개 가능)
+
+# 3단계 — PAMC 균주 단위 교차검증 (장시간, 재개 가능)
+python -m src.kpdc_crosscheck
+
+# 보고서 자료 컴파일
+python -m src.build_report_assets
 ```
 
 첫 실행은 몇 분 걸림 (API rate limit 대응 sleep 포함). **2회차부터는 캐시 덕분에 훨씬 빠름.**
+`expand_env` 와 `kpdc_crosscheck` 는 결과를 항목마다 append 하고 완료분을 건너뛰므로,
+중간에 끊겨도 다시 실행하면 이어서 진행됨.
+
+CD-HIT 는 별도 설치 필요: `brew install cd-hit` 또는 `conda install -c bioconda cd-hit`
 
 ### 캐싱
 모든 API 호출(GBIF, Bio-ORACLE, UniProt, AlphaFold)은 `.cache/` 폴더에 자동 저장됨.
@@ -50,10 +133,22 @@ data/seed_species.csv (18종, afp_type + validation_status)
         ├─ src/fetch_uniprot.py     → 종 → 검증된 AFP 서열 (reviewed:true만)
         ├─ src/fetch_alphafold.py   → accession → 구조 신뢰도 + pLDDT 프로파일
         ├─ src/features.py          → 서열 물리화학 특징 (GRAVY, pI 등)
-        └─ src/stats_model.py       → 그룹비교 통계 + 분류모델(feature importance)
+        └─ src/stats_model.py       → 그룹비교 통계 + 분류모델 + 계통통제 CV
                 │
                 ▼
-        data/final_merged.csv, figures/*.png
+        data/final_merged.csv, data/phylogeny_cv.csv, figures/*.png
+
+2단계 (DUF3494 계열 확장)
+        src/fetch_pfam.py    → PF11999 서열·taxonomy 일괄 수집
+        src/expand_eda.py    → CD-HIT 대표 → 피처 → 계통별 EDA
+        src/expand_env.py    → 속 단위 서식지 온도 (해양/육상 이원화)
+
+3단계 (독립 검증)
+        src/kpdc_crosscheck.py → PAMC 균주 단위 실측 좌표 대조
+
+문서화
+        src/figures_spike.py       → 스파이크 보고서 그림
+        src/build_report_assets.py → REPORT_ASSETS.md (그림 11 + 표 7)
 ```
 
 ## 1단계 스파이크 — 미생물·조류 IBP 포함 전 구간 관통 (2026-07)
@@ -219,6 +314,86 @@ Type I/II/III·AFGP 6종 + RTX 계열 MpAFP)는 애초에 다른 단백질 계�
 이 실패를 직접 측정했음(북극 균주인데 속 분포 중심은 핀란드 북방림 61°N).
 특정 단백질에 대한 주장에는 **균주 채집 좌표(NCBI BioSample)** 를 써야 함.
 
+## 3단계 — PAMC 교차검증 (균주 단위 실측 좌표)
+
+`python -m src.kpdc_crosscheck`  (중단해도 안전, 재실행하면 이어서 진행)
+
+**왜 필요한가.** 2단계 서식지 수치는 GBIF 출현기록을 속 단위로 평균한 값에 의존하는데,
+1단계에서 그 대리값이 얼마나 부실할 수 있는지 직접 측정됨 — *Leucosporidium* sp. AY30 은
+북극 균주지만 속 분포중심은 핀란드 북방림 61°N 임.
+
+**PAMC**(극지연구소 Polar and Alpine Microbial Collection, 약 6,500 균주)는 균주마다
+**실제 분리된 채집 좌표**를 보유함. 속 범위 평균이 아니라 균주 단위 실측이므로 독립 검증이 됨.
+
+### 결과 (DUF3494 440속 대상)
+
+| 항목 | 값 |
+|---|---|
+| 매칭된 PAMC 균주 | 574 |
+| 매칭된 고유 속 | 51 |
+| 좌표 보유 균주 | 449 |
+| 좌표 결손 (PAMC 원본에 값 없음) | 125 |
+| 고유 채집지점 | 38 |
+
+권역별(좌표 보유 균주): 북극 229 · 남극 150 · 고산 46 · 기타 24
+
+→ **좌표 보유 균주의 84%(379/449)가 북극 또는 남극에서 분리됨.**
+DUF3494 보유 속이 실제로 극지 생물이라는 독립 증거.
+
+### GBIF 속 추정 vs PAMC 실측 — 속마다 신뢰도가 다름
+
+| 속 | PAMC 실측 \|위도\| | GBIF 추정 \|위도\| | 차이 |
+|---|---|---|---|
+| *Cryobacterium* | 72.70 (남극 빅토리아랜드) | 40.78 | **31.92** |
+| *Flavobacterium* | 39.52 | 43.25 | 3.73 |
+
+**GBIF 기반 속 단위 서식지 추정은 단일 신뢰값으로 해석하면 안 됨.** 속에 따라 30도 이상
+빗나가기도 하고 근접하기도 함.
+
+### 한계
+
+- PAMC 는 **극지 기관이 극지에서 수집한 컬렉션**이므로 표본 자체가 극지 편향임.
+  "DUF3494 속이 극지에 있다"는 확인은 되지만 **"극지에만 있다"는 주장의 근거는 아님.**
+- PAMC 검색은 자유텍스트 매칭이라, 종명이 질의 속명으로 **시작하는** 행만 채택함.
+- API 가 없어 공개 검색·균주 페이지를 읽음. 요청 간 1초 지연 + 재시도 + 디스크 캐시를 두었고,
+  좌표는 균주가 아니라 **채집지의 속성**이므로 지점당 1회만 조회함(그렇지 않으면 같은 좌표를
+  수천 번 받아오게 됨).
+- 검색 결과는 페이지당 20행이라 **페이징 없이는 잘림** — *Psychrobacter* 가 264건 대신
+  0건으로 나왔던 원인.
+
+## 계통 통제 교차검증 (held-out-by-clade)
+
+`python -m src.pipeline` 실행 시 함께 산출 → `data/phylogeny_cv.csv`,
+`figures/model_phylogeny_control.png`
+
+**왜 필요한가.** AFP 타입이 계통과 강하게 교란돼 있음 — Nototheniidae 4종 **전부** AFGP,
+Pleuronectidae 2종 **전부** Type I, Zoarcidae 2종 **전부** Type III. 따라서 Leave-One-Out 은
+제외된 종의 근연종이 학습셋에 거의 항상 남아 있어, **서식지를 배우지 않고 계통을 알아보는
+것만으로** 점수를 얻을 수 있음. 과(family)를 통째로 빼면 그 지름길이 사라짐.
+
+| 변수 집합 | LOO | 과 holdout | 다수클래스 baseline | 계통 갭 |
+|---|---|---|---|---|
+| 환경만 | 0.222 | **0.056** | 0.444 | +0.167 |
+| 서열만 | 0.600 | **0.300** | 0.300 | +0.300 |
+| 환경+서열 | 0.300 | 0.200 | 0.300 | +0.100 |
+
+**계통을 통제하면 어떤 변수 집합도 baseline 을 넘지 못함.** 환경 변수만 쓰면 plain LOO
+에서조차 baseline 에 못 미침.
+
+→ 이 데이터로 **"환경이 AFP 타입을 결정한다"고 주장할 수 없음.** AFP 타입은 계통적 산물로
+보는 것이 타당하며, 프로젝트가 뒷받침할 수 있는 주장은 **"IBP 보유 여부가 한랭 서식지와
+연관된다"**(1단계, p=0.0027)임.
+
+음성 결과지만 심사에서는 강점임 — 교란을 인지하고 정량화했다는 증거이며, 통제 없이
+LOO 0.600 을 성과로 제시했다면 지적받을 지점이었음.
+
+## 보고서용 자료 모음
+
+`python -m src.build_report_assets` → `REPORT_ASSETS.md`
+
+그림 11장 + 표 7개를 캡션과 함께 한 문서로 모음. **모든 표는 `data/` 의 CSV 에서 직접
+계산**되므로 본문 수치와 어긋날 수 없음. 그림은 Okabe-Ito 색각이상 안전 팔레트로 통일함.
+
 ## 알아둬야 할 것 (데이터 정제 이력)
 
 1. **환경 변수는 연평균이 아니라 "분포중심 관측점의 연중 최저수온"** 을 씀
@@ -294,12 +469,22 @@ Chaenocephalus 17aa / Pagothenia 31aa / Dissostichus 33aa / **Notothenia 790aa**
    실제 2차구조 비율(DSSP), 회전반경, 표면 소수성 패치, 추정 ice-binding face
    평탄도 등이 훨씬 의미 있음.
 3. **환경 변수 확장** — 현재 수온·해빙 3종. 염분, 용존산소, 수심, 계절 진폭 추가 가능.
-4. **모델링** — 현재 RandomForest + LOO-CV(표본이 작아 정확도는 참고치).
-   계통(phylogeny) 통제 교차검증(held-out-by-clade)을 넣으면 "환경 신호 vs 계통 암기"
-   분리가 가능해짐 — 이게 심사에서 가장 강한 rigor 포인트가 될 수 있음.
-5. **미생물 IBP 확장(본선용)** — Pfam DUF3494 도메인 서열(수천 개) + Ocean Gene Atlas
-   메타게놈으로 규모 확대. 단, 미생물은 GBIF 좌표가 서식지 대리값으로 부정확하므로
-   균주 채집 좌표(NCBI BioSample) 또는 메타게놈 샘플 환경값을 써야 함.
+4. ~~**모델링** — 계통 통제 교차검증(held-out-by-clade)~~ → **완료.**
+   §"계통 통제 교차검증" 참조. 결과는 음성이었고, 그 자체가 중요한 발견임 —
+   계통을 통제하면 어떤 변수 집합도 baseline 을 넘지 못하므로 "환경이 AFP 타입을
+   결정한다"는 서술은 쓸 수 없음(정오표 E2).
+5. ~~**미생물 IBP 확장** — Pfam DUF3494 서열 규모 확대~~ → **완료.**
+   §2단계 참조 (PF11999 2,250건 → 대표 1,835개 / 1,117 분류군).
+   여기 적혀 있던 "미생물은 GBIF 좌표가 부정확하다"는 우려도 **실측으로 확인됨** —
+   §3단계 PAMC 교차검증에서 *Cryobacterium* 이 32도 빗나감.
+   남은 확장 여지는 **Ocean Gene Atlas 메타게놈**과 **NCBI BioSample 채집 좌표**임.
+
+### 지금 시점의 우선순위
+
+1. **`expand_env` 완주** — 현재 10 / 441 속. 실측 속도로 완주에 수 시간 필요하며,
+   완주하면 PAMC 대조 대상이 2속에서 51속으로 늘어 §3단계 표가 훨씬 강해짐.
+2. **정오표 E3·E4 확정** — 원본 PAMC 스크립트 소재 확인 필요.
+3. **AFGP 성숙 펩타이드 보정** — §"성숙 펩타이드 vs 전구체 혼재" 참조.
 
 ## LLM 사용 내역 (규정상 명시 필요)
 분석 설계, 데이터 정제 로직, 코드 작성 및 디버깅 과정에서 Claude(Anthropic)를
