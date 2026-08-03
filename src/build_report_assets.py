@@ -215,6 +215,62 @@ def section_phylogeny(out):
         "그쪽은 1단계 스파이크에서 p=0.0027 로 뒷받침됨(표 2).\n")
 
 
+def section_pamc(out):
+    path = "data/pamc_coordinates.csv"
+    if not os.path.exists(path):
+        return
+    co = pd.read_csv(path)
+    st = pd.read_csv("data/pamc_strain_table.csv")
+    out.append("## 표 7. PAMC 교차검증 — DUF3494 속의 실제 균주 채집 좌표\n")
+    out.append(
+        "GBIF 속 단위 좌표가 미생물 서식지 대리로 부실하다는 것이 1단계에서 확인됐으므로"
+        "(*Leucosporidium* 사례), **극지연구소 PAMC**(극지·고산 미생물 컬렉션, 약 6,500 균주)의 "
+        "**균주별 실제 채집 좌표**로 독립 검증함. `python -m src.kpdc_crosscheck`\n")
+
+    summary = pd.DataFrame([
+        {"항목": "DUF3494 속과 매칭된 PAMC 균주", "값": len(st)},
+        {"항목": "매칭된 고유 속", "값": st.query_genus.nunique()},
+        {"항목": "좌표 보유 균주", "값": len(co)},
+        {"항목": "좌표 결손 (PAMC 원본에 값 없음)", "값": len(st) - len(co)},
+        {"항목": "고유 채집지점 (locality 기준)", "값": co.locality.nunique()},
+    ])
+    out.append(md_table(summary, floatfmt="{:.0f}") + "\n")
+
+    reg = co.region.value_counts().rename_axis("권역").reset_index(name="균주 수")
+    reg["비율(%)"] = (100 * reg["균주 수"] / len(co)).round(1)
+    out.append("### 권역별 분포 (좌표 보유 균주)\n")
+    out.append(md_table(reg, floatfmt="{:.1f}") + "\n")
+    polar = int(co.region.isin(["Arctic", "Antarctic"]).sum())
+    out.append(f"**좌표 보유 균주의 {100 * polar / len(co):.1f}% ({polar}/{len(co)})가 "
+               f"북극 또는 남극에서 분리됨** — DUF3494 보유 속이 실제로 극지 생물이라는 "
+               f"독립 증거.\n")
+
+    gpath = "data/pamc_genus_latitude.csv"
+    if os.path.exists(gpath):
+        g = pd.read_csv(gpath)
+        if "gbif_abs_lat" in g and g.gbif_abs_lat.notna().any():
+            cmp = g[g.gbif_abs_lat.notna()].copy()
+            ren = {"query_genus": "속", "n_strains": "PAMC 균주",
+                   "pamc_abs_lat_median": "PAMC 실측 |위도|",
+                   "gbif_abs_lat": "GBIF 추정 |위도|", "lat_gap": "차이"}
+            out.append("### GBIF 속 단위 추정 vs PAMC 실측\n")
+            out.append(md_table(cmp[[c for c in ren if c in cmp]].rename(columns=ren),
+                                floatfmt="{:.2f}") + "\n")
+            out.append(
+                "⚠️ **GBIF 속 좌표는 속에 따라 크게 빗나감.** *Cryobacterium* 은 실제 채집지가 "
+                "남극 빅토리아랜드(|위도| 72.7)인데 GBIF 속 분포중심은 40.8 로, **32도 차이**임. "
+                "*Flavobacterium* 은 3.7도 차이로 근접함. 즉 GBIF 기반 속 단위 서식지 추정은 "
+                "**속마다 신뢰도가 다르며, 단일 값으로 해석하면 안 됨**.\n")
+
+    out.append("### 한계\n")
+    out.append(
+        f"- PAMC 원본에 좌표가 없는 균주가 {len(st) - len(co)}건 있음(킹조지섬 37, 로스해 29 등). "
+        f"권역 분류는 locality 문자열로 가능하나 좌표 기반 분석에서는 제외됨.\n"
+        "- PAMC 검색은 자유텍스트 매칭이므로, 종명이 질의 속명으로 시작하는 행만 채택함.\n"
+        "- 컬렉션 자체가 극지 편향 표본임 — 극지 기관이 극지에서 수집한 자료이므로, "
+        "'DUF3494 속이 극지에 있다'는 확인은 되지만 '극지에만 있다'는 주장의 근거는 아님.\n")
+
+
 def section_pipeline(out):
     path = "data/stats_summary.csv"
     if not os.path.exists(path):
@@ -241,6 +297,7 @@ def main():
     section_env(out)
     section_pipeline(out)
     section_phylogeny(out)
+    section_pamc(out)
 
     with open(OUT, "w", encoding="utf-8") as fh:
         fh.write("\n".join(out))
