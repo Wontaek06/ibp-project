@@ -1,0 +1,17 @@
+accession,organism_override,label,clade,afp_class,expect_cold,notes
+A5XB26,,ColAFP,Bacteria,DUF3494,yes,Colwellia sp. SLW05 sea-ice bacterium; Swiss-Prot reviewed
+H7FWB6,,FfIBP,Bacteria,DUF3494,yes,Flavobacterium frigoris PS1 Antarctic; Swiss-Prot reviewed
+A1YIY2,,MpAFP,Bacteria,RTX-adhesin,yes,Marinomonas primoryensis Ca2+-dependent RTX AFP; TrEMBL
+C7F6X3,,LeIBP,Fungi,DUF3494,yes,Leucosporidium sp. AY30 Arctic yeast; Swiss-Prot reviewed
+Q76CE8,,TisAFP-K1A,Fungi,DUF3494,yes,Typhula ishikariensis snow mould; Swiss-Prot reviewed
+D0FHA3,,FcIBP1,Chromista,DUF3494,yes,Fragilariopsis cylindrus Antarctic sea-ice diatom; TrEMBL only
+D2DLE1,,CnAFP,Chromista,DUF3494,yes,Chaetoceros neogracilis polar diatom; TrEMBL only
+P02732,,AFGP-Pb,Animalia,AFGP,yes,Pagothenia borchgrevinki Antarctic notothenioid
+P04002,,TypeI-Pa,Animalia,Type I,yes,Pseudopleuronectes americanus winter flounder
+P05140,,TypeII-Ha,Animalia,Type II,yes,Hemitripterus americanus sea raven
+Q01758,,TypeII-Om,Animalia,Type II,yes,Osmerus mordax rainbow smelt
+P07457,,TypeIII-Za,Animalia,Type III,yes,Zoarces americanus ocean pout
+P12416,,TypeIII-Al,Animalia,Type III,yes,Anarhichas lupus Atlantic wolffish
+,Thunnus albacares,CTRL-yellowfin,Animalia,none,no,Negative control - tropical tuna with no AFP
+,Sparus aurata,CTRL-seabream,Animalia,none,no,Negative control - Mediterranean gilthead seabream
+,Lutjanus campechanus,CTRL-snapper,Animalia,none,no,Negative control - Gulf of Mexico red snapper

@@ -9,15 +9,18 @@ Takes a few minutes due to API rate limits (GBIF, Bio-ORACLE, UniProt,
 AlphaFold). Safe to re-run; each step prints progress per species.
 """
 import time
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from src.fetch_gbif import species_cold_points
+from src.fetch_gbif import species_core_points
 from src.fetch_bio_oracle import fetch_all_env_vars
 from src.fetch_uniprot import uniprot_afp
 from src.fetch_alphafold import alphafold_meta, fetch_plddt_profile, structural_regularity
 from src.features import seq_features
-from src.stats_model import group_comparison, posthoc_dunn, classify_afp_type, bootstrap_ci
+from src.stats_model import (group_comparison, posthoc_dunn, classify_afp_type,
+                             bootstrap_ci, phylogeny_controlled_cv)
+from src.taxonomy import resolve_clade
 
 SEED_PATH = "data/seed_species.csv"
 OUT_PATH = "data/final_merged.csv"
@@ -27,11 +30,11 @@ AFP_TYPES = ["AFGP", "Type I", "Type II", "Type III"]  # Type IV excluded from g
 
 
 def build_environment_table(seed_df):
-    """All 18 seed species: GBIF winter points -> Bio-ORACLE env vars."""
+    """All 18 seed species: distribution-centre localities -> Bio-ORACLE env vars."""
     rows = []
     for _, s in seed_df.iterrows():
         name = s["scientific_name"]
-        points = species_cold_points(name, k=3)
+        points = species_core_points(name, k=3)
         env = fetch_all_env_vars(points) if points else {
             "surf_min_temp": None, "bottom_temp": None, "sea_ice_thick": None
         }
@@ -91,9 +94,12 @@ def make_figures(merged, seq_cols_present):
         if len(sub):
             plt.scatter(sub.rep_lat, sub.surf_min_temp, c=c, label=t, s=70, edgecolor="k")
     plt.axhline(0, ls="--", c="gray", lw=0.8)
-    plt.xlabel("Representative poleward latitude (deg)")
-    plt.ylabel("Surface MIN temp (C, winter)")
-    plt.title("Cold-habitat winter temperature vs latitude")
+    # Labels track the current definitions: the representative point is the
+    # distribution centre (not the poleward extreme), and the temperature is
+    # Bio-ORACLE's annual minimum (not a winter-observation average).
+    plt.xlabel("Distribution-centre latitude (deg)")
+    plt.ylabel("Annual minimum sea surface temperature (C)")
+    plt.title("Habitat temperature vs latitude")
     plt.legend(); plt.tight_layout()
     plt.savefig(f"{FIG_DIR}/env_latitude_vs_sst.png", dpi=150); plt.close()
 
@@ -203,6 +209,74 @@ def main():
         plt.title(f"What explains AFP type? (RandomForest, LOO acc={acc})")
         plt.tight_layout(); plt.savefig(f"{FIG_DIR}/model_feature_importance.png", dpi=150); plt.close()
         print(f"Saved {FIG_DIR}/model_feature_importance.png")
+
+    phylogeny_control(merged, env_cols, seq_stat_cols)
+
+
+def phylogeny_control(merged, env_cols, seq_cols):
+    """
+    Leave-one-family-out CV against plain LOO - the honest version of the
+    "what explains AFP type?" question.
+
+    AFP type is confounded with taxonomy here: all four Nototheniidae are
+    AFGP, both Pleuronectidae are Type I, and so on. Leave-One-Out
+    therefore leaves a same-label relative in the training set almost
+    every time, and rewards recognising the lineage rather than learning
+    anything about habitat. Holding out whole families removes that
+    shortcut; the drop is the phylogenetic component of the LOO score.
+    """
+    if "family" not in merged:
+        merged["family"] = [resolve_clade(n, kingdom="Animalia")
+                            for n in merged.scientific_name]
+
+    sets = [("environment only", env_cols)]
+    if seq_cols:
+        sets += [("sequence only", seq_cols), ("environment + sequence", env_cols + seq_cols)]
+
+    print("\n--- Phylogeny-controlled CV (leave-one-family-out) ---")
+    rows = []
+    for label, feats in sets:
+        r = phylogeny_controlled_cv(merged, feats, group_col="family")
+        if not r:
+            continue
+        r["feature_set"] = label
+        rows.append(r)
+        print(f"[{label}]  n={r['n']}  families={r['n_clades']}")
+        print(f"    LOO accuracy            {r['loo_accuracy']:.3f}")
+        print(f"    leave-one-family-out    {r['clade_holdout_accuracy']:.3f}")
+        print(f"    majority baseline       {r['majority_baseline']:.3f}")
+        print(f"    phylogeny gap           {r['phylogeny_gap']:+.3f}")
+
+    if not rows:
+        return
+    pd.DataFrame(rows).to_csv("data/phylogeny_cv.csv", index=False, encoding="utf-8-sig")
+    print("Saved data/phylogeny_cv.csv")
+
+    labels = [r["feature_set"] for r in rows]
+    x = np.arange(len(labels))
+    width = 0.27
+    fig, ax = plt.subplots(figsize=(8.6, 5.2))
+    ax.bar(x - width, [r["loo_accuracy"] for r in rows], width,
+           label="Leave-One-Out", color="#0072B2")
+    ax.bar(x, [r["clade_holdout_accuracy"] for r in rows], width,
+           label="Leave-one-family-out", color="#E69F00")
+    for i, r in enumerate(rows):
+        ax.hlines(r["majority_baseline"], i - 1.6 * width, i + 1.6 * width,
+                  color="#666666", ls="--", lw=1.6,
+                  label="Majority baseline" if i == 0 else None)
+
+    ax.set_xticks(x, labels)
+    ax.set_ylabel("Accuracy")
+    ax.set_ylim(0, 1)
+    ax.set_title("Environment signal vs. phylogenetic memorisation\n"
+                 "the drop from LOO to family-holdout is the lineage shortcut",
+                 fontsize=11)
+    ax.legend(frameon=False, fontsize=9)
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(f"{FIG_DIR}/model_phylogeny_control.png", dpi=200)
+    plt.close(fig)
+    print(f"Saved {FIG_DIR}/model_phylogeny_control.png")
 
 
 if __name__ == "__main__":

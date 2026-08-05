@@ -1,0 +1,39 @@
+﻿locality,latitude,longitude,n_strains,genera,region,marine
+Cara Sea/Cara Sea/Cara Sea/Russia/Europe,73.83479,67.58873,102,"Brevibacterium, Paenibacillus, Paenisporosarcina, Shewanella",Arctic,True
+Northern Victoria Land (NVL)/Antarctica,-72.69727,165.99457,71,"Arthrobacter, Cryobacterium, Paenibacillus, Rhodococcus, Subtercola",Antarctic,False
+Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.21967,-58.78667,35,"Arthrobacter, Dyadobacter, Flavobacterium, Frondihabitans, Janthinobacterium, Mucilaginibacter, Pedobacter, Rhodococcus, Rugamonas, Subtercola, Variovorax",Antarctic,True
+Council/Alaska/USA/North America,64.84513,-163.71137,32,"Paenibacillus, Rhodococcus",Arctic,False
+제주도 남단 이어도 해상 과학기지/Ieodo/Jeju Island/Korea/Asia,32.0,126.0,24,"Flavobacterium, Shewanella",Other,True
+Ny-Ålesund/Svalbard/Norway,78.55,11.53,17,"Algoriphagus, Colwellia, Flavobacterium, Polaribacter, Psychromonas, Shewanella",Arctic,False
+"Ny-Alesund, Spitsbergen, Norway/Ny-Ålesund/Svalbard/Norway/Europe",78.91237,11.95708,15,"Arthrobacter, Flavobacterium",Arctic,False
+Kongsfijorden 선착장/Ny-Ålesund/Svalbard/Norway/Europe,78.92267,11.89147,15,"Algoriphagus, Aurantimonas, Flavobacterium, Hoeflea, Paracoccus, Polaribacter, Shewanella",Arctic,False
+Eisgratferner - Stubaier glacier/Innsbruck/Tyrol/Austria/Europe,47.04,12.41,14,Janthinobacterium,Alpine,False
+Ny-Ålesund/Svalbard/Norway/Europe,78.92267,11.89147,13,"Algoriphagus, Flavobacterium, Mucilaginibacter, Paracoccus, Psychromonas, Shewanella",Arctic,True
+Chukchi Sea/Arctic Ocean,82.17917,-171.86833,13,"Agrococcus, Arthrobacter, Aurantimonas, Aureimonas, Brevibacterium, Marinobacter, Paenibacillus, Shewanella",Arctic,True
+"Bankerferner - Wurmkogel, Ötztaler Alps/Innsbruck/Tyrol/Austria/Europe",47.04,12.41,10,"Arthrobacter, Janthinobacterium, Mucilaginibacter",Alpine,False
+"Pitztaler Jöchl Ferner, Ötztaler Alps/Innsbruck/Tyrol/Austria/Europe",47.04,12.41,10,"Arthrobacter, Flavobacterium, Janthinobacterium, Mucilaginibacter",Alpine,False
+Beaufort Sea/Arctic Ocean,70.80185,-136.09969,9,"Marinobacter, Paenibacillus, Paenisporosarcina, Paraglaciecola, Shewanella",Arctic,True
+"Pasterze - Großglockner,Hohe Tauern/Innsbruck/Tyrol/Austria/Europe",47.04,12.41,7,"Flavobacterium, Janthinobacterium",Alpine,False
+Dasan Korean Arctic Station/Ny-Ålesund/Svalbard/Norway/Europe,78.9123,11.95463,7,"Frondihabitans, Hymenobacter, Subtercola",Arctic,False
+Barton Penninsula/King George Island/South Shetland Islands/Antarctica,-62.22605,-58.78357,7,"Frigoribacterium, Frondihabitans, Hymenobacter, Paenibacillus",Antarctic,False
+세종기지/펭귄마을 방향 해안가 바위 위/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.22418,-58.7859,6,"Chryseobacterium, Flavobacterium, Salinibacterium",Antarctic,True
+세종기지/세종호/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.13,-58.47,5,"Albidiferax, Arthrobacter, Chryseobacterium, Pedobacter, Polaromonas",Antarctic,False
+세종기지/촛대바위 지나 연결된 해안/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.23733,-58.74273,4,"Arthrobacter, Flavobacterium",Antarctic,False
+Ross Sea/Antarctica,-76.4788,163.37823,4,"Microbacterium, Nesterenkonia, Paenibacillus",Antarctic,True
+Tiefenbachferner - Ötztaler Alps/Innsbruck/Tyrol/Austria/Europe,47.04,12.41,4,"Janthinobacterium, Mucilaginibacter",Alpine,False
+펭귄보호구역/Barton Penninsula/King George Island/South Shetland Islands/Antarctica,-62.23438,-58.78202,3,"Deinococcus, Frondihabitans",Antarctic,False
+Australian-Antarctic Ridge/Southern Ocean,-60.08503,152.43637,3,Brevibacterium,Antarctic,True
+Russian Harbor/Russian Harbor/Navaya Zemlya/Russia/Europe,76.11472,62.35436,2,Brevibacterium,Arctic,False
+세종기지/펭귄마을 지나 연결된 해변/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.13,-58.47,2,"Actimicrobium, Salinibacterium",Antarctic,True
+"세종기지에서 사면을 넘어, Usnea가 많이 서식하는 지점과 골짜기 사이 바위가 많은지점/Ardley Peninsula/King George Island/South Shetland Islands/Antarctica",-62.22415,-58.78257,2,"Microbacterium, Rhodococcus",Antarctic,False
+Barents Sea/Barents Sea/Barents Sea/Russia/Europe,76.49993,59.88318,2,Brevibacterium,Arctic,True
+Ardley Island/South Shetland Islands/Antarctica,-62.2065,-58.9205,2,"Chryseobacterium, Flavobacterium",Antarctic,False
+Potter Cove/King George Island/South Shetland Islands/Antarctica,-62.24167,-58.67383,1,Salinibacterium,Antarctic,True
+Zugspitze - Zugspitz glacier/Innsbruck/Tyrol/Austria/Europe,47.04,12.41,1,Flavobacterium,Alpine,False
+세종기지 유류탱크 뒤쪽/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.22405,-58.78495,1,Frondihabitans,Antarctic,False
+"Kings Bay(Ny-Alesund 앞바다), Spitsbergen, Norway/Ny-Ålesund/Svalbard/Norway/Europe",78.93855,11.87888,1,Arthrobacter,Arctic,True
+세종기지/촛대바위 지나 펭귄마을 바로 밑 해안/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.13,-58.47,1,Pedobacter,Antarctic,True
+Bering sea/Pacific Ocean,62.50111,-174.0,1,Algoriphagus,Arctic,True
+세종기지/펭귄마을 뱡향 해안가 바위 근처/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.2256,-58.78423,1,Gillisia,Antarctic,True
+세종기지/펭귄마을 오르기전 해안/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.2334,-58.77642,1,Flavobacterium,Antarctic,True
+세종기지주변/Barton Peninsula/King George Island/South Shetland Islands/Antarctica,-62.13,-58.46,1,Arthrobacter,Antarctic,False

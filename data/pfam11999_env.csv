@@ -1,0 +1,10 @@
+﻿genus,clade,gbif_key,gbif_match,n_occ,occ_provider,rep_lat,n_marine_pts,n_pts,land_min_temp,habitat,n_proteins
+Streptomyces,Bacteria,2584528,EXACT,300,GBIF,27.3,0,3,-6.267,terrestrial,141
+Flavobacterium,Bacteria,3221328,EXACT,300,GBIF,43.25,0,3,-0.467,terrestrial,105
+Mycena,Fungi,5955261,EXACT,300,GBIF,39.34,1,3,0.967,terrestrial,94
+Pontibacter,Bacteria,3228350,EXACT,300,GBIF,23.52,0,3,6.467,terrestrial,59
+Fragilariopsis,Diatoms,8120978,EXACT,300,GBIF,62.86,2,3,marine,1.229,43
+Polarella,Other,7596018,EXACT,300,GBIF,79.68,3,3,marine,-1.994,40
+Micromonospora,Bacteria,3224505,EXACT,300,GBIF,7.15,0,3,19.4,terrestrial,40
+Streptosporangium,Bacteria,3223562,EXACT,300,GBIF,31.97,0,3,1.4,terrestrial,34
+Cryobacterium,Bacteria,3225339,EXACT,300,GBIF,40.78,0,3,-16.833,terrestrial,34
