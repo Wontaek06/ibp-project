@@ -1,0 +1,42 @@
+# 재현 검증 환경 (environment.txt)
+#
+# README 1장의 버전표는 보고서 제출 시점의 개발 환경(Ubuntu 22.04 LTS) 기준이다.
+# 아래는 코드가 실제로 재실행·검증된 환경의 설치 버전이다. 두 환경의 주요
+# 라이브러리 버전이 모두 다르지만 산출 결과는 동일하므로, requirements.txt 는
+# 하한 버전만 지정한다.
+#
+# Python      3.12.9
+# 플랫폼      macOS-15.1-arm64-arm-64bit
+# 구현        CPython
+#
+# CD-HIT 4.8.1 (pip 패키지가 아니므로 별도 설치: conda install -c bioconda cd-hit)
+
+# --- 직접 의존성 ---
+requests==2.32.3
+pandas==2.2.3
+numpy==2.2.6
+scipy==1.16.1
+scikit-learn==1.7.1
+scikit-posthocs==0.14.0
+biopython==1.87
+matplotlib==3.10.5
+
+# --- 주요 전이 의존성 ---
+certifi==2026.7.22
+charset-normalizer==3.3.2
+cycler==0.12.1
+fonttools==4.59.1
+idna==3.7
+joblib==1.5.1
+kiwisolver==1.4.9
+packaging==24.2
+patsy==1.0.2
+pillow==11.3.0
+pyparsing==3.2.3
+python-dateutil==2.9.0.post0
+pytz==2025.2
+seaborn==0.13.2
+six==1.17.0
+statsmodels==0.14.6
+threadpoolctl==3.6.0
+urllib3==2.3.0

@@ -36,7 +36,22 @@ biopython       1.81
 matplotlib      3.7.5
 ```
 
-전체 의존성 목록은 `requirements.txt`, 실행 환경의 설치 버전 전량은 `environment.txt` 에 기록하였다.
+위 버전은 보고서 제출 시점의 개발 환경 기준이다. 코드는 이후 아래 환경에서 재실행·검증
+되었으며, 주요 라이브러리 버전이 모두 다름에도 산출 결과는 동일하다.
+
+| 항목 | 제출 시점 | 재현 검증 |
+|---|---|---|
+| OS | Ubuntu 22.04 LTS | macOS 15.1 (arm64) |
+| Python | 3.10 이상 | 3.12.9 |
+| pandas / numpy | 2.0.3 / 1.24.4 | 2.2.3 / 2.2.6 |
+| scipy / scikit-learn | 1.11.4 / 1.3.2 | 1.16.1 / 1.7.1 |
+| biopython / matplotlib | 1.81 / 3.7.5 | 1.87 / 3.10.5 |
+
+따라서 `requirements.txt` 는 하한 버전만 지정한다. 두 환경의 설치 버전 전량은
+`environment.txt` 에 기록하였다.
+
+계열 확장 단계(§4)에는 **CD-HIT 4.8.1** 이 추가로 필요하며, pip 패키지가 아니므로
+`conda install -c bioconda cd-hit` 또는 `brew install cd-hit` 으로 설치한다.
 
 ---
 
